@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
@@ -70,10 +71,13 @@ class MainActivity : AppCompatActivity() {
         // Top large header (like "Connected devices")
         val header = TextView(this).apply {
             text = getString(R.string.app_name)
-            textSize = 32f
-            setPadding(dp(24), dp(64), dp(24), dp(24))
+            textSize = 30f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(attrColor(android.R.attr.textColorPrimary))
+            setPadding(dp(24), dp(56), dp(24), dp(8))
         }
         root.addView(header)
+        root.addView(heroPanel())
 
         // Status row
         val statusRow = settingsRow("Status", "Checking...")
@@ -680,6 +684,70 @@ class MainActivity : AppCompatActivity() {
     }
 
     // --- UI Helpers ---
+
+    private fun heroPanel(): View {
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            background = roundedBg(Color.rgb(13, 71, 64), dp(18))
+            layoutParams = LinearLayout.LayoutParams(LP_MATCH, LP_WRAP).apply {
+                leftMargin = dp(16)
+                rightMargin = dp(16)
+                bottomMargin = dp(12)
+            }
+        }
+
+        panel.addView(TextView(this).apply {
+            text = "Bahasa Melayu dictation, ready across apps"
+            textSize = 20f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(Color.WHITE)
+        })
+        panel.addView(TextView(this).apply {
+            text = "Local-first Whisper models, Manglish cleanup, and one-tap insertion into focused fields."
+            textSize = 14f
+            setTextColor(Color.rgb(206, 232, 226))
+            setPadding(0, dp(6), 0, dp(14))
+        })
+
+        val chipRows = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val chipRowOne = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        val chipRowTwo = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(8), 0, 0)
+        }
+        chipRowOne.addView(heroChip("MS default"))
+        chipRowOne.addView(heroChip("${MODEL_CATALOG.count { "ms" in it.languages }} Malay models"))
+        chipRowTwo.addView(heroChip("On-device option"))
+        chipRowTwo.addView(heroChip("Gemini cleanup"))
+        chipRows.addView(chipRowOne)
+        chipRows.addView(chipRowTwo)
+        panel.addView(chipRows)
+        return panel
+    }
+
+    private fun heroChip(textValue: String) = TextView(this).apply {
+        text = textValue
+        textSize = 12f
+        setTypeface(typeface, Typeface.BOLD)
+        setTextColor(Color.rgb(13, 71, 64))
+        background = roundedBg(Color.rgb(224, 247, 239), dp(14))
+        setPadding(dp(10), dp(6), dp(10), dp(6))
+        layoutParams = LinearLayout.LayoutParams(LP_WRAP, LP_WRAP).apply {
+            rightMargin = dp(8)
+        }
+    }
+
+    private fun roundedBg(color: Int, radius: Int) =
+        GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = radius.toFloat()
+            setColor(color)
+        }
 
     private fun settingsRow(title: String, subtitle: String, widget: View? = null, onClick: (() -> Unit)? = null): LinearLayout {
         val row = LinearLayout(this).apply {

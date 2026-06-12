@@ -1,4 +1,4 @@
-/* Phone Whisper landing */
+/* whisper-malay v2 landing */
 
 :root {
   --accent: #1A73E8;
@@ -838,5 +838,33 @@ h2 {
     width: 210px;
     height: 412px;
   }
-  .hero-sub br { display: none; }
+.hero-sub br { display: none; }
+}
+
+.legal-content {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 112px 24px 120px;
+}
+
+.legal-content h1 {
+  font-size: 36px;
+  margin-bottom: 24px;
+}
+
+.legal-content h2 {
+  font-size: 20px;
+  margin-top: 36px;
+  margin-bottom: 12px;
+}
+
+.legal-content p {
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.back-home {
+  display: inline-flex;
+  margin-bottom: 28px;
+  font-weight: 600;
 }

@@ -1,39 +1,29 @@
-# Privacy Policy for Phone Whisper
+# Privacy Policy for whisper-malay v2
 
-Phone Whisper is an Android dictation app that records speech, transcribes it, and inserts the result into text fields across apps.
+Developed by **ahmadafif5321**.
 
-## Data handling
+whisper-malay v2 records speech, transcribes it, and inserts the resulting text into focused Android text fields after you explicitly tap the floating overlay button.
 
-Phone Whisper supports two transcription modes.
+## Local Mode
 
-### Local mode
+In local mode, audio is processed on-device using local ASR models. Audio does not leave the phone.
 
-In local mode, audio is processed on-device using local speech recognition models. Audio does not leave the device.
+## Cloud Mode
 
-### Cloud mode
+In cloud mode, recorded audio is sent directly from the device to Google Gemini for transcription using your own API key.
 
-In cloud mode, recorded audio is sent directly from the device to Google Gemini's transcription API to generate text.
+If cleanup is enabled, transcript text is sent directly from the device to Google Gemini to improve punctuation, capitalization, and obvious speech-to-text errors. The Malay cleanup prompt is designed to preserve Bahasa Melayu, Manglish, and common particles.
 
-If optional cleanup is enabled, the transcribed text is also sent directly from the device to Google Gemini's API to improve punctuation, capitalization, and clarity.
+## API Keys
 
-## API keys
+Your Gemini API key is stored locally in app storage and used only for direct requests from your device to Google Gemini.
 
-If you use cloud features, your Gemini API key is stored locally on your device in app storage and used to authenticate requests sent directly to Google Gemini.
-
-I do not operate a relay server for these requests.
+This project does not operate a relay server.
 
 ## Accessibility Service
 
-Phone Whisper uses Android Accessibility Service only to identify the currently focused text field and insert dictated text after you explicitly interact with the floating overlay button.
+The Accessibility Service is used only to find the focused text field and insert dictated text after you interact with the overlay. It is not intended for browsing monitoring, analytics, keylogging, or background automation.
 
-Phone Whisper is not designed to monitor browsing, collect screen content for analytics, or perform background automation.
+## Data Collection
 
-## Data collection
-
-I do not run a backend for Phone Whisper and do not collect user accounts, analytics, or uploaded recordings myself.
-
-Third-party services you choose to use, such as Google Gemini, may process data according to their own terms and privacy policies.
-
-## Contact
-
-For questions about privacy, contact: pol.avms@gmail.com
+This project does not collect accounts, analytics, uploaded recordings, or transcripts. Third-party services you choose to use, such as Google Gemini, process data according to their own terms and privacy policies.
