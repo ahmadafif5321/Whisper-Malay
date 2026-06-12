@@ -28,6 +28,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var audioRowSub: TextView
     private lateinit var accRowSub: TextView
     private lateinit var keyRowSub: TextView
+    private lateinit var malayReadinessRow: LinearLayout
+    private lateinit var malayReadinessSub: TextView
     private lateinit var promptRowSub: TextView
     private lateinit var promptRow: LinearLayout
     private lateinit var modelContainer: LinearLayout
@@ -98,6 +100,9 @@ class MainActivity : AppCompatActivity() {
         // --- Language Section ---
         root.addView(sectionHeader("Language"))
         for (lang in APP_LANGUAGES) root.addView(buildLanguageRow(lang))
+        malayReadinessRow = settingsRow("Malay readiness", "Checking selected model...")
+        malayReadinessSub = malayReadinessRow.findViewWithTag("subtitle")
+        root.addView(malayReadinessRow)
 
         // --- Engine Section ---
         
@@ -600,11 +605,38 @@ class MainActivity : AppCompatActivity() {
             else -> "Setup required"
         }
         statusSubtitle.setTextColor(if (ready) attrColor(com.google.android.material.R.attr.colorPrimary) else attrColor(android.R.attr.textColorSecondary))
+        refreshMalayReadiness(useLocal, activeModel)
         
         refreshAllCards()
         rebuildCustomModelRows()
         refreshLanguageRows()
         refreshPromptRows()
+    }
+
+    private fun refreshMalayReadiness(useLocal: Boolean, activeModel: String) {
+        if (!useLocal) {
+            malayReadinessSub.text = "Cloud mode sends Bahasa Melayu transcription instructions"
+            malayReadinessSub.setTextColor(attrColor(com.google.android.material.R.attr.colorPrimary))
+            return
+        }
+
+        if (activeModel.isBlank() || !File(filesDir, "models/$activeModel").exists()) {
+            malayReadinessSub.text = "Download Malay Whisper Small to use Bahasa Melayu locally"
+            malayReadinessSub.setTextColor(attrColor(android.R.attr.textColorSecondary))
+            return
+        }
+
+        val modelName = MODEL_CATALOG.firstOrNull { it.archive == activeModel }?.name ?: activeModel
+        val supportsMalay = archiveSupportsLanguage(activeModel, "ms")
+        malayReadinessSub.text = if (supportsMalay) {
+            "$modelName supports Bahasa Melayu Malaysia"
+        } else {
+            "$modelName is English-only; choose Malay Whisper Small or Medium"
+        }
+        malayReadinessSub.setTextColor(
+            if (supportsMalay) attrColor(com.google.android.material.R.attr.colorPrimary)
+            else Color.rgb(176, 0, 32)
+        )
     }
 
     private fun promptApiKey() {
