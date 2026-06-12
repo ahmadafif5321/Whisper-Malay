@@ -13,6 +13,7 @@ android {
         targetSdk = 34
         versionCode = 2
         versionName = "0.3.0"
+        setProperty("archivesBaseName", "whisper-malay")
 
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -26,10 +27,19 @@ android {
     kotlinOptions { jvmTarget = "17" }
 
     testOptions { unitTests { isIncludeAndroidResources = true } }
+
+    packaging {
+        // jniLibs ships libonnxruntime.so 1.17.1 for sherpa-onnx; the onnxruntime-android
+        // AAR (same 1.17.1) bundles an identical copy — keep one
+        jniLibs { pickFirsts += "lib/arm64-v8a/libonnxruntime.so" }
+    }
 }
 
 dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // Must stay on 1.17.1 to match the libonnxruntime.so bundled for sherpa-onnx in jniLibs
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.17.1")
+    implementation("com.microsoft.onnxruntime:onnxruntime-extensions-android:0.10.0")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")

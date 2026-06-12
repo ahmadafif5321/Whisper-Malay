@@ -67,8 +67,10 @@ class WhisperAccessibilityService : AccessibilityService() {
         }?.start()
     }
 
-    // Local transcription engine (loaded lazily)
+    // Local transcription engine (loaded lazily); written by load threads, read by transcription threads
+    @Volatile
     private var localTranscriber: LocalTranscriber? = null
+    private val modelLoadLock = Any()
 
     private val dp get() = resources.displayMetrics.density
     private val screenW get() = resources.displayMetrics.widthPixels
@@ -77,8 +79,16 @@ class WhisperAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         instance = this
         showOverlay()
+        Log.i(TAG, "overlay shown, starting model init")
         // Try to load local model in background
-        thread { initLocalModel() }
+        thread {
+            try {
+                initLocalModel()
+            } catch (t: Throwable) {
+                Log.e(TAG, "Model init thread failed", t)
+                toast("Model load failed: ${t.message}")
+            }
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
@@ -87,30 +97,73 @@ class WhisperAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         instance = null
         removeOverlay()
+        synchronized(modelLoadLock) {
+            localTranscriber?.release()
+            localTranscriber = null
+        }
         super.onDestroy()
     }
 
-    private fun initLocalModel() {
+    private fun initLocalModel() = synchronized(modelLoadLock) {
         val modelName = prefs().getString("model_name", "") ?: ""
+        // Resolve which model we actually attempt to load (selected pref or auto-detected first).
+        val resolvedModel: String?
         if (modelName.isBlank()) {
             // Auto-detect first available model
             val models = LocalTranscriber.availableModels(this)
-            if (models.isNotEmpty()) {
-                Log.i(TAG, "Auto-detected model: ${models.first()}")
-                localTranscriber = LocalTranscriber.create(this, models.first())
+            val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
+            resolvedModel = bestModelForLanguage(models, language) ?: models.firstOrNull()
+            if (resolvedModel != null) {
+                Log.i(TAG, "Auto-detected model: $resolvedModel")
             }
         } else {
-            localTranscriber = LocalTranscriber.create(this, modelName)
+            resolvedModel = modelName
         }
+        val modelDir = if (resolvedModel != null)
+            java.io.File(java.io.File(filesDir, "models"), resolvedModel).absolutePath else "(none)"
+        Log.i(TAG, "initLocalModel: modelName='$modelName' resolved='$resolvedModel' dir=$modelDir")
+
+        if (resolvedModel != null) {
+            val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
+            val old = localTranscriber
+            localTranscriber = LocalTranscriber.create(this, resolvedModel, language)
+            // Free the previous model's native sessions; release() waits for any
+            // in-flight transcription on the old instance to finish
+            old?.release()
+        }
+
+        val loadedModel = resolvedModel
         if (localTranscriber != null) {
             Log.i(TAG, "Local transcription ready")
+            if (loadedModel != null) {
+                val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
+                if (!archiveSupportsLanguage(loadedModel, language)) {
+                    val loadedName = MODEL_CATALOG.firstOrNull { it.archive == loadedModel }?.name ?: loadedModel
+                    Log.w(TAG, "Model '$loadedModel' does not support language '$language'")
+                    toast("Model $loadedName is English-only — dictation will be English")
+                }
+            }
+        } else if (resolvedModel != null) {
+            // A model IS selected/available but failed to load — surface loudly (no silent disable).
+            Log.e(TAG, "Model load failed for '$resolvedModel'")
+            toast("Model load failed: $resolvedModel")
         } else {
+            // No local model selected or downloaded — keep silent, API path will be used.
             Log.i(TAG, "No local model found, will use API")
         }
     }
 
     /** Reload local model (called from MainActivity when settings change) */
-    fun reloadModel() { thread { initLocalModel() } }
+    fun reloadModel() {
+        thread {
+            try {
+                initLocalModel()
+            } catch (t: Throwable) {
+                Log.e(TAG, "Model reload thread failed", t)
+                toast("Model load failed: ${t.message}")
+            }
+        }
+    }
 
     // --- Overlay ---
 
@@ -156,6 +209,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         overlay.setOnTouchListener { v, ev ->
             when (ev.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    Log.i(TAG, "overlay ACTION_DOWN, state=$state")
                     startX = params.x; startY = params.y
                     touchX = ev.rawX; touchY = ev.rawY
                     true
@@ -303,6 +357,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     // --- State machine ---
 
     private fun onTap() {
+        Log.i(TAG, "onTap, state=$state")
         when (state) {
             State.IDLE -> startRecording()
             State.RECORDING -> stopAndTranscribe()
@@ -384,10 +439,10 @@ class WhisperAccessibilityService : AccessibilityService() {
                 Log.i(TAG, "Local transcription: ${ms}ms, ${samples.size / SAMPLE_RATE}s audio")
 
                 handleTranscriptionResult(text)
-            } catch (e: Exception) {
-                Log.e(TAG, "Local transcription failed", e)
+            } catch (t: Throwable) {
+                Log.e(TAG, "Local transcription failed", t)
                 handler.post {
-                    toast("Local error: ${e.message}")
+                    toast("Local error: ${t.message}")
                     state = State.IDLE
                     setBusy(false)
                     setAppearance(COLOR_IDLE)
@@ -400,16 +455,19 @@ class WhisperAccessibilityService : AccessibilityService() {
         val wav = WavWriter.encode(pcm)
         val apiKey = prefs().getString("api_key", "") ?: ""
         if (apiKey.isBlank()) { reset("Set API key in Phone Whisper app"); return }
+        val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
 
-        TranscriberClient.transcribe(wav, apiKey) { result ->
-            if (result.text != null && result.text.isNotBlank()) {
-                handleTranscriptionResult(result.text)
-            } else {
-                handler.post {
-                    toast("Error: ${result.error ?: "empty transcript"}")
-                    state = State.IDLE
-                    setBusy(false)
-                    setAppearance(COLOR_IDLE)
+        thread {
+            TranscriberClient.transcribe(wav, apiKey, language) { result ->
+                if (result.text != null && result.text.isNotBlank()) {
+                    handleTranscriptionResult(result.text)
+                } else {
+                    handler.post {
+                        toast("Error: ${result.error ?: "empty transcript"}")
+                        state = State.IDLE
+                        setBusy(false)
+                        setAppearance(COLOR_IDLE)
+                    }
                 }
             }
         }
@@ -441,8 +499,10 @@ class WhisperAccessibilityService : AccessibilityService() {
                 return
             }
 
-            val prompt = prefs().getString("post_processing_prompt", PostProcessor.DEFAULT_PROMPT) ?: PostProcessor.DEFAULT_PROMPT
-            
+            val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
+            val rawPrompt = prefs().getString("post_processing_prompt", PostProcessor.DEFAULT_PROMPT) ?: PostProcessor.DEFAULT_PROMPT
+            val prompt = PostProcessor.promptForLanguage(rawPrompt, language)
+
             PostProcessor.process(text, prompt, apiKey) { result ->
                 handler.post {
                     if (result.text != null && result.text.isNotBlank()) {

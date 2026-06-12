@@ -6,13 +6,15 @@ import org.junit.Test
 class TranscriberClientTest {
 
     @Test fun `parses success response`() {
-        val r = TranscriberClient.parseResponse("""{"text": "Hello world"}""")
+        val r = TranscriberClient.parseResponse(
+            """{"candidates":[{"content":{"parts":[{"text":" Hello world "}]}}]}"""
+        )
         assertEquals("Hello world", r.text)
         assertNull(r.error)
     }
 
     @Test fun `parses error response`() {
-        val r = TranscriberClient.parseResponse("""{"error":{"message":"Invalid key","type":"auth"}}""")
+        val r = TranscriberClient.parseResponse("""{"error":{"message":"Invalid key","status":"PERMISSION_DENIED"}}""")
         assertNull(r.text)
         assertEquals("Invalid key", r.error)
     }

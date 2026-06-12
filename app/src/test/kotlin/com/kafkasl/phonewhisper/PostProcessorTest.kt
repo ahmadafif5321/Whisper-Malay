@@ -10,22 +10,19 @@ class PostProcessorTest {
     fun parseSuccess() {
         val json = """
         {
-            "id": "chatcmpl-123",
-            "object": "chat.completion",
-            "created": 1677652288,
-            "model": "gpt-4o-mini",
-            "choices": [{
-                "index": 0,
-                "message": {
-                    "role": "assistant",
-                    "content": "Hello there, how are you?"
+            "candidates": [{
+                "content": {
+                    "parts": [{
+                        "text": "Hello there, how are you?"
+                    }],
+                    "role": "model"
                 },
-                "finish_reason": "stop"
+                "finishReason": "STOP"
             }],
-            "usage": {
-                "prompt_tokens": 9,
-                "completion_tokens": 12,
-                "total_tokens": 21
+            "usageMetadata": {
+                "promptTokenCount": 9,
+                "candidatesTokenCount": 12,
+                "totalTokenCount": 21
             }
         }
         """.trimIndent()
@@ -40,10 +37,9 @@ class PostProcessorTest {
         val json = """
         {
             "error": {
+                "code": 400,
                 "message": "Incorrect API key provided.",
-                "type": "invalid_request_error",
-                "param": null,
-                "code": "invalid_api_key"
+                "status": "INVALID_ARGUMENT"
             }
         }
         """.trimIndent()
@@ -54,16 +50,16 @@ class PostProcessorTest {
     }
 
     @Test
-    fun parseEmptyChoices() {
+    fun parseEmptyCandidates() {
         val json = """
         {
-            "choices": []
+            "candidates": []
         }
         """.trimIndent()
 
         val result = PostProcessor.parseResponse(json)
         assertEquals(null, result.text)
-        assertEquals("No choices in response", result.error)
+        assertEquals("No candidates in response", result.error)
     }
 
     @Test
@@ -73,6 +69,70 @@ class PostProcessorTest {
         assertTrue(
             result.error?.contains("JSONObject") == true ||
                 result.error?.contains("must begin with '{'") == true
+        )
+    }
+
+    // --- MALAY_PROMPT content ---
+
+    @Test
+    fun malayPromptContainsNoTranslateInstruction() {
+        val prompt = PostProcessor.MALAY_PROMPT.lowercase()
+        assertTrue(
+            "MALAY_PROMPT must contain a no-translate instruction",
+            prompt.contains("do not translate") || prompt.contains("jangan") || prompt.contains("tidak")
+        )
+    }
+
+    @Test
+    fun malayPromptDiffersFromDevPrompt() {
+        assertTrue(PostProcessor.MALAY_PROMPT != PostProcessor.DEV_PROMPT)
+    }
+
+    @Test
+    fun malayPromptDiffersFromSimplePrompt() {
+        assertTrue(PostProcessor.MALAY_PROMPT != PostProcessor.SIMPLE_PROMPT)
+    }
+
+    // --- promptForLanguage ---
+
+    @Test
+    fun promptForLanguageMsWithDevPromptReturnsMalay() {
+        assertEquals(
+            PostProcessor.MALAY_PROMPT,
+            PostProcessor.promptForLanguage(PostProcessor.DEV_PROMPT, "ms")
+        )
+    }
+
+    @Test
+    fun promptForLanguageMsWithSimplePromptReturnsMalay() {
+        assertEquals(
+            PostProcessor.MALAY_PROMPT,
+            PostProcessor.promptForLanguage(PostProcessor.SIMPLE_PROMPT, "ms")
+        )
+    }
+
+    @Test
+    fun promptForLanguageMsWithMalayPromptReturnsMalay() {
+        assertEquals(
+            PostProcessor.MALAY_PROMPT,
+            PostProcessor.promptForLanguage(PostProcessor.MALAY_PROMPT, "ms")
+        )
+    }
+
+    @Test
+    fun promptForLanguageEnWithDevPromptReturnsUnchanged() {
+        assertEquals(
+            PostProcessor.DEV_PROMPT,
+            PostProcessor.promptForLanguage(PostProcessor.DEV_PROMPT, "en")
+        )
+    }
+
+    @Test
+    fun promptForLanguageMsWithCustomPromptReturnsUnchanged() {
+        val custom = "My custom prompt that is not a built-in preset"
+        assertEquals(
+            custom,
+            PostProcessor.promptForLanguage(custom, "ms")
         )
     }
 }
