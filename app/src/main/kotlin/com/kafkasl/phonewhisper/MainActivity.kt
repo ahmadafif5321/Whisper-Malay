@@ -1,6 +1,9 @@
 package com.kafkasl.phonewhisper
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -31,6 +34,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var keyRowSub: TextView
     private lateinit var malayReadinessRow: LinearLayout
     private lateinit var malayReadinessSub: TextView
+    private lateinit var modelStatusSub: TextView
+    private lateinit var benchmarkSub: TextView
+    private lateinit var historySub: TextView
+    private lateinit var logsSub: TextView
     private lateinit var promptRowSub: TextView
     private lateinit var promptRow: LinearLayout
     private lateinit var modelContainer: LinearLayout
@@ -107,6 +114,28 @@ class MainActivity : AppCompatActivity() {
         malayReadinessRow = settingsRow("Malay readiness", "Checking selected model...")
         malayReadinessSub = malayReadinessRow.findViewWithTag("subtitle")
         root.addView(malayReadinessRow)
+
+        root.addView(sectionHeader("Diagnostics"))
+        val setupGuideRow = settingsRow("Setup guide", "Permission, accessibility, model, test dictation") {
+            showSetupGuide()
+        }
+        root.addView(setupGuideRow)
+        val modelStatusRow = settingsRow("Model status", "Checking...")
+        modelStatusSub = modelStatusRow.findViewWithTag("subtitle")
+        root.addView(modelStatusRow)
+        val benchmarkRow = settingsRow("Benchmark hint", "Checking...")
+        benchmarkSub = benchmarkRow.findViewWithTag("subtitle")
+        root.addView(benchmarkRow)
+        val historyRow = settingsRow("Transcript history", "No transcripts yet") {
+            showTranscriptHistory()
+        }
+        historySub = historyRow.findViewWithTag("subtitle")
+        root.addView(historyRow)
+        val logsRow = settingsRow("Debug logs", "No logs yet") {
+            showDebugLogs()
+        }
+        logsSub = logsRow.findViewWithTag("subtitle")
+        root.addView(logsRow)
 
         // --- Engine Section ---
         
@@ -610,11 +639,66 @@ class MainActivity : AppCompatActivity() {
         }
         statusSubtitle.setTextColor(if (ready) attrColor(com.google.android.material.R.attr.colorPrimary) else attrColor(android.R.attr.textColorSecondary))
         refreshMalayReadiness(useLocal, activeModel)
+        refreshDiagnostics(useLocal, activeModel, language)
         
         refreshAllCards()
         rebuildCustomModelRows()
         refreshLanguageRows()
         refreshPromptRows()
+    }
+
+    private fun refreshDiagnostics(useLocal: Boolean, activeModel: String, language: String) {
+        modelStatusSub.text = AppDiagnostics.modelStatus(this, activeModel, language, useLocal)
+        benchmarkSub.text = AppDiagnostics.benchmarkHint(activeModel)
+        val historyCount = AppDiagnostics.recentTranscripts(this).size
+        historySub.text = if (historyCount == 0) "No transcripts yet" else "$historyCount saved locally"
+        val logCount = AppDiagnostics.recentLogs(this).size
+        logsSub.text = if (logCount == 0) "No logs yet" else "$logCount local diagnostic entries"
+    }
+
+    private fun showSetupGuide() {
+        val model = MODEL_CATALOG.first { it.archive == "sherpa-onnx-whisper-small" }
+        val message = listOf(
+            "1. Grant microphone permission.",
+            "2. Enable the Accessibility Service.",
+            "3. Download ${model.name} for Bahasa Melayu.",
+            "4. Confirm Malay readiness is green.",
+            "5. Open any text field, tap the overlay, speak, tap again."
+        ).joinToString("\n")
+        android.app.AlertDialog.Builder(this)
+            .setTitle("whisper-Malay setup")
+            .setMessage(message)
+            .setPositiveButton("Download ${model.name}") { _, _ -> onModelAction(model) }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showTranscriptHistory() {
+        val items = AppDiagnostics.recentTranscripts(this)
+        val body = items.ifEmpty { listOf("No transcripts yet.") }.joinToString("\n\n")
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Transcript history")
+            .setMessage(body)
+            .setPositiveButton("Copy all") { _, _ -> copyText("whisper-Malay transcripts", body) }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun showDebugLogs() {
+        val items = AppDiagnostics.recentLogs(this)
+        val body = items.ifEmpty { listOf("No logs yet.") }.joinToString("\n")
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Debug logs")
+            .setMessage(body)
+            .setPositiveButton("Copy logs") { _, _ -> copyText("whisper-Malay logs", body) }
+            .setNegativeButton("Close", null)
+            .show()
+    }
+
+    private fun copyText(label: String, text: String) {
+        (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+            .setPrimaryClip(ClipData.newPlainText(label, text))
+        toast("Copied")
     }
 
     private fun refreshMalayReadiness(useLocal: Boolean, activeModel: String) {

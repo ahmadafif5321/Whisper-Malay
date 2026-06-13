@@ -437,10 +437,12 @@ class WhisperAccessibilityService : AccessibilityService() {
                 val text = transcriber.transcribe(samples, SAMPLE_RATE)
                 val ms = System.currentTimeMillis() - t0
                 Log.i(TAG, "Local transcription: ${ms}ms, ${samples.size / SAMPLE_RATE}s audio")
+                AppDiagnostics.addLog(this, "Local transcription ${ms}ms for ${samples.size / SAMPLE_RATE}s audio")
 
                 handleTranscriptionResult(text)
             } catch (t: Throwable) {
                 Log.e(TAG, "Local transcription failed", t)
+                AppDiagnostics.addLog(this, "Local transcription failed: ${t.message}")
                 handler.post {
                     toast("Local error: ${t.message}")
                     state = State.IDLE
@@ -460,6 +462,7 @@ class WhisperAccessibilityService : AccessibilityService() {
         thread {
             TranscriberClient.transcribe(wav, apiKey, language) { result ->
                 if (result.text != null && result.text.isNotBlank()) {
+                    AppDiagnostics.addLog(this, "Gemini transcription returned ${result.text.length} chars")
                     handleTranscriptionResult(result.text)
                 } else {
                     handler.post {
@@ -541,6 +544,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     ) {
         val clip = ClipData.newPlainText("phonewhisper", text)
         (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(clip)
+        AppDiagnostics.addTranscript(this, text)
         feedback?.let { showFeedback(it, feedbackDurationMs) }
 
         val candidates = findInjectionCandidates()

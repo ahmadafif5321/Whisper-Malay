@@ -15,10 +15,10 @@ whisper-malay v2 is an Android push-to-talk dictation app focused on Bahasa Mela
 
 ## APK
 
-Current V2 debug APK:
+Current installable APK:
 
 ```text
-app/build/outputs/apk/debug/whisper-malay-v2-debug.apk
+app/build/outputs/apk/debug/whisper-Malay.apk
 ```
 
 Previous V1 APK is kept when present:
@@ -29,7 +29,7 @@ app/build/outputs/apk/debug/whisper-malay-debug.apk
 
 ## Setup
 
-1. Install `whisper-malay-v2-debug.apk`.
+1. Install `whisper-Malay.apk`.
 2. Open **whisper-malay v2**.
 3. Grant microphone permission.
 4. Enable the Accessibility Service.
