@@ -1,6 +1,6 @@
 # whisper-malay v2
 
-Developed by **ahmadafif5321**.
+Refine by **ahmadafif5321**. Original project by **kafkasl** 
 
 whisper-malay v2 is an Android push-to-talk dictation app focused on Bahasa Melayu Malaysia and Manglish. It places a small floating button over your apps: tap once to record, tap again to transcribe, then the text is inserted into the focused field when Android exposes a standard text input.
 
