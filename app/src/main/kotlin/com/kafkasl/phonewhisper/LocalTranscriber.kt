@@ -48,7 +48,10 @@ class LocalTranscriber private constructor(
         fun availableModels(ctx: Context): List<String> {
             val modelsDir = File(ctx.filesDir, "models")
             if (!modelsDir.exists()) return emptyList()
-            return modelsDir.listFiles()?.filter { it.isDirectory }?.map { it.name } ?: emptyList()
+            return modelsDir.listFiles()
+                ?.filter { ModelDownloader.isUsableModelDir(it) }
+                ?.map { it.name }
+                ?: emptyList()
         }
 
         /** Create a LocalTranscriber for the given model directory name. Returns null on failure. */

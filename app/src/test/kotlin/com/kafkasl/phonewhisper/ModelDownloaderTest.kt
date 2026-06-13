@@ -81,6 +81,41 @@ class ModelDownloaderTest {
         }
     }
 
+    @Test fun `onnx whisper usable dir requires all runtime files`() {
+        withTempDir { tmp ->
+            File(tmp, "Whisper_initializer.onnx").writeText("fake")
+
+            assertFalse(ModelDownloader.isUsableModelDir(tmp))
+            assertEquals(
+                listOf(
+                    "Whisper_encoder.onnx",
+                    "Whisper_cache_initializer.onnx",
+                    "Whisper_decoder.onnx",
+                    "Whisper_detokenizer.onnx",
+                ),
+                OnnxWhisperTranscriber.missingRequiredFiles(tmp)
+            )
+
+            OnnxWhisperTranscriber.REQUIRED_FILES.forEach { File(tmp, it).writeText("fake") }
+
+            assertTrue(ModelDownloader.isUsableModelDir(tmp))
+            assertTrue(OnnxWhisperTranscriber.missingRequiredFiles(tmp).isEmpty())
+        }
+    }
+
+    @Test fun `sherpa whisper usable dir requires tokens encoder and decoder`() {
+        withTempDir { tmp ->
+            File(tmp, "tokens.txt").writeText("fake")
+            File(tmp, "small-encoder.int8.onnx").writeText("fake")
+
+            assertFalse(ModelDownloader.isUsableModelDir(tmp))
+
+            File(tmp, "small-decoder.int8.onnx").writeText("fake")
+
+            assertTrue(ModelDownloader.isUsableModelDir(tmp))
+        }
+    }
+
     @Test fun `catalog offers multilingual models covering english and malay`() {
         val multilingual = MODEL_CATALOG.filter { "ms" in it.languages }
         assertTrue(multilingual.isNotEmpty())
@@ -237,6 +272,35 @@ class ModelDownloaderTest {
         val parakeet = "sherpa-onnx-nemo-parakeet_tdt_ctc_110m-en-36000-int8"
         val malay = "sherpa-onnx-whisper-small"
         assertEquals(malay, bestModelForLanguage(listOf(parakeet, malay), DEFAULT_LANGUAGE))
+    }
+
+    @Test fun `localModelCandidates tries selected compatible model first`() {
+        val selected = "whisper_small_int8"
+        val tiny = "sherpa-onnx-whisper-tiny"
+
+        assertEquals(
+            listOf(selected, tiny),
+            localModelCandidates(listOf(tiny, selected), selected, "ms")
+        )
+    }
+
+    @Test fun `localModelCandidates prefers language capable fallback over unsupported selected model`() {
+        val englishOnly = "sherpa-onnx-whisper-base.en"
+        val malay = "sherpa-onnx-whisper-small"
+
+        assertEquals(
+            listOf(malay, englishOnly),
+            localModelCandidates(listOf(englishOnly, malay), englishOnly, "ms")
+        )
+    }
+
+    @Test fun `localModelCandidates keeps selected model as last resort`() {
+        val englishOnly = "sherpa-onnx-whisper-base.en"
+
+        assertEquals(
+            listOf(englishOnly),
+            localModelCandidates(listOf(englishOnly), englishOnly, "ms")
+        )
     }
 
     @Test fun `archive filename from hugging face resolve url keeps zip name`() {

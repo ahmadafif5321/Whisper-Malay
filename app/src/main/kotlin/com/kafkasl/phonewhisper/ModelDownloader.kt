@@ -97,6 +97,31 @@ fun bestModelForLanguage(installed: List<String>, code: String): String? {
     return byCatalog.firstOrNull() ?: capable.first()
 }
 
+/**
+ * Load order for local dictation. The selected model gets first chance only when it
+ * supports the active language; otherwise a better installed language-capable model
+ * is tried first. If no capable model exists, the selected model is kept as a last
+ * resort so English-only setups still work for English dictation.
+ */
+fun localModelCandidates(installed: List<String>, selected: String, code: String): List<String> {
+    val ordered = linkedSetOf<String>()
+    val installedSet = installed.toSet()
+
+    if (selected.isNotBlank() && selected in installedSet && archiveSupportsLanguage(selected, code)) {
+        ordered += selected
+    }
+
+    bestModelForLanguage(installed.filter { it != selected }, code)?.let { ordered += it }
+    installed
+        .filter { it != selected && archiveSupportsLanguage(it, code) }
+        .forEach { ordered += it }
+
+    if (selected.isNotBlank() && selected in installedSet) ordered += selected
+    if (ordered.isEmpty()) installed.forEach { ordered += it }
+
+    return ordered.toList()
+}
+
 sealed class DownloadState {
     data class Downloading(val progress: Float) : DownloadState()
     object Extracting : DownloadState()
@@ -115,7 +140,32 @@ object ModelDownloader {
         File(ctx.filesDir, "models/${model.archive}")
 
     fun isInstalled(ctx: Context, model: Model) =
-        modelDir(ctx, model).exists()
+        isUsableModelDir(modelDir(ctx, model))
+
+    fun isUsableModelDir(dir: File): Boolean {
+        if (!dir.isDirectory) return false
+        if (OnnxWhisperTranscriber.isOnnxWhisperDir(dir)) {
+            return OnnxWhisperTranscriber.missingRequiredFiles(dir).isEmpty()
+        }
+
+        val files = dir.listFiles()?.map { it.name } ?: return false
+        val hasTokens = files.any { it.endsWith("tokens.txt") }
+        if (!hasTokens) return false
+
+        val hasWhisper = files.any { it.containsBoundary("encoder") } &&
+            files.any { it.containsBoundary("decoder") } &&
+            files.none { it.containsBoundary("joiner") }
+        val hasTransducer = files.any { it.containsBoundary("encoder") } &&
+            files.any { it.containsBoundary("decoder") } &&
+            files.any { it.containsBoundary("joiner") }
+        val hasCtc = files.any { it.containsBoundary("model") }
+        val hasMoonshine = files.any { it == "preprocess.onnx" } &&
+            files.any { it.startsWith("encode") } &&
+            files.any { it.startsWith("uncached_decode") } &&
+            files.any { it.startsWith("cached_decode") }
+
+        return hasWhisper || hasTransducer || hasCtc || hasMoonshine
+    }
 
     /**
      * Download and extract model. Callbacks fire on background thread.
@@ -226,6 +276,16 @@ object ModelDownloader {
         )
         val (srcDir, name) = if (single != null) single to single.name else stagingDir to baseName
 
+        if (OnnxWhisperTranscriber.isOnnxWhisperDir(srcDir)) {
+            val missing = OnnxWhisperTranscriber.missingRequiredFiles(srcDir)
+            if (missing.isNotEmpty()) {
+                throw IOException("Incomplete Whisper ONNX archive; missing: ${missing.joinToString(", ")}")
+            }
+        }
+        if (!isUsableModelDir(srcDir)) {
+            throw IOException("Incomplete or unsupported ASR model archive")
+        }
+
         val dest = File(ctx.filesDir, "models/$name")
         dest.deleteRecursively()
         dest.parentFile?.mkdirs()
@@ -329,4 +389,9 @@ object ModelDownloader {
             FileOutputStream(dest).use(write)
         }
     }
+}
+
+private fun String.containsBoundary(marker: String): Boolean {
+    val boundary = Regex("(^|[._-])${Regex.escape(marker)}([._-]|$)")
+    return boundary.containsMatchIn(this)
 }

@@ -106,47 +106,56 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     private fun initLocalModel() = synchronized(modelLoadLock) {
         val modelName = prefs().getString("model_name", "") ?: ""
-        // Resolve which model we actually attempt to load (selected pref or auto-detected first).
-        val resolvedModel: String?
-        if (modelName.isBlank()) {
-            // Auto-detect first available model
-            val models = LocalTranscriber.availableModels(this)
-            val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
-            resolvedModel = bestModelForLanguage(models, language) ?: models.firstOrNull()
-            if (resolvedModel != null) {
-                Log.i(TAG, "Auto-detected model: $resolvedModel")
+        val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
+        val models = LocalTranscriber.availableModels(this)
+        val candidates = localModelCandidates(models, modelName, language)
+
+        if (modelName.isBlank() && candidates.isNotEmpty()) {
+            Log.i(TAG, "Auto-detected model candidates: $candidates")
+        }
+        Log.i(TAG, "initLocalModel: modelName='$modelName' language='$language' candidates=$candidates")
+
+        val old = localTranscriber
+        localTranscriber = null
+        var loadedModel: String? = null
+        for (candidate in candidates) {
+            val modelDir = java.io.File(java.io.File(filesDir, "models"), candidate).absolutePath
+            Log.i(TAG, "Trying local model '$candidate' at $modelDir")
+            val loaded = LocalTranscriber.create(this, candidate, language)
+            if (loaded != null) {
+                localTranscriber = loaded
+                loadedModel = candidate
+                break
             }
-        } else {
-            resolvedModel = modelName
-        }
-        val modelDir = if (resolvedModel != null)
-            java.io.File(java.io.File(filesDir, "models"), resolvedModel).absolutePath else "(none)"
-        Log.i(TAG, "initLocalModel: modelName='$modelName' resolved='$resolvedModel' dir=$modelDir")
 
-        if (resolvedModel != null) {
-            val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
-            val old = localTranscriber
-            localTranscriber = LocalTranscriber.create(this, resolvedModel, language)
-            // Free the previous model's native sessions; release() waits for any
-            // in-flight transcription on the old instance to finish
-            old?.release()
+            Log.e(TAG, "Model load failed for '$candidate'")
+            AppDiagnostics.addLog(this, "Model load failed: $candidate")
+        }
+        // Free the previous model's native sessions; release() waits for any
+        // in-flight transcription on the old instance to finish.
+        old?.release()
+
+        if (loadedModel != null && loadedModel != modelName) {
+            prefs().edit().putString("model_name", loadedModel).apply()
+            val loadedName = MODEL_CATALOG.firstOrNull { it.archive == loadedModel }?.name ?: loadedModel
+            toast("Using $loadedName")
         }
 
-        val loadedModel = resolvedModel
         if (localTranscriber != null) {
             Log.i(TAG, "Local transcription ready")
             if (loadedModel != null) {
-                val language = prefs().getString("language", DEFAULT_LANGUAGE) ?: DEFAULT_LANGUAGE
                 if (!archiveSupportsLanguage(loadedModel, language)) {
                     val loadedName = MODEL_CATALOG.firstOrNull { it.archive == loadedModel }?.name ?: loadedModel
                     Log.w(TAG, "Model '$loadedModel' does not support language '$language'")
                     toast("Model $loadedName is English-only — dictation will be English")
                 }
             }
-        } else if (resolvedModel != null) {
+        } else if (candidates.isNotEmpty()) {
             // A model IS selected/available but failed to load — surface loudly (no silent disable).
-            Log.e(TAG, "Model load failed for '$resolvedModel'")
-            toast("Model load failed: $resolvedModel")
+            val failed = candidates.joinToString(", ")
+            Log.e(TAG, "All local model candidates failed: $failed")
+            AppDiagnostics.addLog(this, "All local model candidates failed: $failed")
+            toast("Model load failed: ${candidates.first()}")
         } else {
             // No local model selected or downloaded — keep silent, API path will be used.
             Log.i(TAG, "No local model found, will use API")

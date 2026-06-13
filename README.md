@@ -93,9 +93,11 @@ Malay-capable catalog models:
 |---|---:|---|
 | Whisper Tiny Multilingual | 111 MB | Fast Malay-capable baseline |
 | Whisper Base Multilingual | 198 MB | Balanced baseline |
-| Whisper Small Multilingual | 232 MB | Hugging Face ONNX archive |
+| Whisper Small Multilingual | 232 MB | Hugging Face ONNX archive; experimental runtime path |
 | Malay Whisper Small | 610 MB | Recommended local Malay model |
 | Malay Whisper Medium | 1842 MB | Best quality, slower and heavier |
+
+If `whisper_small_int8` fails to load on a device, use **Malay Whisper Small**. It uses the sherpa-onnx path and is the safer default for reliable Bahasa Melayu dictation.
 
 ## Development
 

@@ -171,7 +171,7 @@ class OnnxWhisperTranscriber private constructor(
         fun languageTokenFor(code: String): Int =
             LANGUAGE_TOKENS[code] ?: LANGUAGE_TOKENS.getValue(DEFAULT_LANGUAGE)
 
-        private val REQUIRED_FILES = listOf(
+        val REQUIRED_FILES = listOf(
             "Whisper_initializer.onnx",
             "Whisper_encoder.onnx",
             "Whisper_cache_initializer.onnx",
@@ -181,9 +181,12 @@ class OnnxWhisperTranscriber private constructor(
 
         fun isOnnxWhisperDir(dir: File) = File(dir, "Whisper_initializer.onnx").exists()
 
+        fun missingRequiredFiles(dir: File): List<String> =
+            REQUIRED_FILES.filter { !File(dir, it).exists() }
+
         /** Create a transcriber for an RTranslator-style model dir. Returns null on failure. */
         fun create(modelDir: File, language: String): OnnxWhisperTranscriber? {
-            val missing = REQUIRED_FILES.filter { !File(modelDir, it).exists() }
+            val missing = missingRequiredFiles(modelDir)
             if (missing.isNotEmpty()) {
                 Log.e(TAG, "Model dir $modelDir missing: $missing")
                 return null
