@@ -1,4 +1,4 @@
-# whisper-malay v2
+# whisper-malay
 
 Refine by **ahmadafif5321**. Original project by **kafkasl** 
 
