@@ -2,6 +2,10 @@
 
 Refine by **ahmadafif5321**. Original project by **kafkasl** 
 
+This project is based on the original Phone Whisper project by kafkasl:
+https://github.com/kafkasl/phone-whisper
+
+
 [Download APK: whisper-Malay.apk](whisper-Malay.apk)
 
 whisper-malay v2 is an Android push-to-talk dictation app focused on Bahasa Melayu Malaysia and Manglish. It places a small floating button over your apps: tap once to record, tap again to transcribe, then the text is inserted into the focused field when Android exposes a standard text input.
