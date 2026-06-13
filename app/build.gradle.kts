@@ -13,7 +13,7 @@ android {
         targetSdk = 34
         versionCode = 3
         versionName = "0.4.0-v2"
-        setProperty("archivesBaseName", "whisper-malay-v2")
+        setProperty("archivesBaseName", "WhisperMalay-Bahasa-v2")
 
         ndk { abiFilters += "arm64-v8a" }
     }
