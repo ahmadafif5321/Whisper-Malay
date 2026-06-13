@@ -1,14 +1,16 @@
-# whisper-malay
+# Whisper Malay
 
-Refine by **ahmadafif5321**. Original project by **kafkasl** 
+Whisper Malay is my official fork of [kafkasl/phone-whisper](https://github.com/kafkasl/phone-whisper), customized for Bahasa Melayu Malaysia and Manglish use cases.
 
-This project is based on the original Phone Whisper project by kafkasl:
-https://github.com/kafkasl/phone-whisper
+This version is maintained by **ahmadafif5321** at:
 
+```text
+https://github.com/ahmadafif5321/Whisper-Malay
+```
 
 [Download APK: whisper-Malay.apk](whisper-Malay.apk)
 
-whisper-malay v2 is an Android push-to-talk dictation app focused on Bahasa Melayu Malaysia and Manglish. It places a small floating button over your apps: tap once to record, tap again to transcribe, then the text is inserted into the focused field when Android exposes a standard text input.
+Whisper Malay v2 is an Android push-to-talk dictation app. It places a small floating button over your apps: tap once to record, tap again to transcribe, then the text is inserted into the focused field when Android exposes a standard text input.
 
 ## Highlights
 
@@ -18,6 +20,17 @@ whisper-malay v2 is an Android push-to-talk dictation app focused on Bahasa Mela
 - Optional Gemini cleanup preserves Bahasa Melayu, Manglish, and particles like `lah`, `kan`, `je`, and `kot`.
 - Model readiness is visible in-app, including whether the selected model supports `ms`.
 - Direct archive downloads are supported, including Hugging Face `/resolve/.../*.zip` links.
+
+## My Use Case
+
+This fork is focused on making voice input easier for Malaysian users who write in:
+
+- Bahasa Melayu Malaysia
+- Manglish
+- Mixed Malay and English
+- Casual chat text with particles like `lah`, `kan`, `je`, and `kot`
+
+The goal is fast phone dictation that can be used inside normal Android apps without changing keyboards.
 
 ## APK
 
@@ -56,7 +69,7 @@ Important restrictions:
 
 ## Setup
 
-1. Download `whisper-Malay.apk` from this repo.
+1. Download [`whisper-Malay.apk`](whisper-Malay.apk) from this repo.
 2. If Android blocks installation, enable **Install unknown apps** for the app you used to open the APK.
 3. Accept any Play Protect/unknown-source prompt only if you trust this repository.
 4. Open **whisper-malay v2**.
@@ -86,6 +99,37 @@ Malay-capable catalog models:
 
 ## Development
 
+Use this repository folder:
+
+```bash
+cd /home/ahmadafif5321/Whisper-AI
+```
+
+Git remotes are set up like this:
+
+```text
+origin   = your official fork: https://github.com/ahmadafif5321/Whisper-Malay
+upstream = original project:    https://github.com/kafkasl/phone-whisper
+```
+
+Normal update workflow:
+
+```bash
+git status
+git add .
+git commit -m "update use case"
+git push origin main
+```
+
+To pull updates from the original project later:
+
+```bash
+git fetch upstream
+git merge upstream/main
+```
+
+Build and test commands:
+
 ```bash
 ./gradlew testDebugUnitTest
 ./gradlew assembleDebug
@@ -108,4 +152,6 @@ See [PRIVACY.md](PRIVACY.md).
 
 ## License
 
-Personal project by **ahmadafif5321**.
+This fork is maintained as a personal project by **ahmadafif5321**.
+
+Original project: [kafkasl/phone-whisper](https://github.com/kafkasl/phone-whisper).
