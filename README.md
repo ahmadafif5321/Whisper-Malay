@@ -33,14 +33,38 @@ The same APK is also kept under:
 release/whisper-Malay.apk
 ```
 
+## Android Access Requirements
+
+Because this APK is installed directly from GitHub and not from Google Play, Android may ask for extra confirmation before installation.
+
+You may need to allow:
+
+- **Install unknown apps**: Android Settings → Apps → your browser/file manager → Install unknown apps → Allow from this source.
+- **Google Play Protect warning**: Play Protect may warn because the APK is not from Play Store. Review the warning and choose install/allow only if you trust this repository.
+- **Microphone permission**: required to record your speech.
+- **Accessibility Service**: required so the floating dictation button can insert text into the currently focused text field across apps.
+- **Internet access**: required for model downloads, Hugging Face direct URLs, and Gemini cloud transcription/cleanup.
+- **Storage space**: local models are large. Malay Whisper Small is about 610 MB; Malay Whisper Medium is about 1.8 GB.
+- **Gemini API key**: required only for cloud transcription or cleanup. Local transcription does not need an API key.
+
+Important restrictions:
+
+- Some apps block accessibility text insertion. In that case, whisper-malay copies the transcript to clipboard as fallback.
+- Terminal/custom text surfaces may not behave like standard Android text fields.
+- Accessibility must usually be re-enabled after reinstalling or changing APK signatures.
+- Large local models can be slow or fail on devices with limited RAM.
+
 ## Setup
 
-1. Install `whisper-Malay.apk`.
-2. Open **whisper-malay v2**.
-3. Grant microphone permission.
-4. Enable the Accessibility Service.
-5. Download **Malay Whisper Small** for the recommended local setup.
-6. Use **Malay Whisper Medium** only when you want best quality and have enough storage/RAM.
+1. Download `whisper-Malay.apk` from this repo.
+2. If Android blocks installation, enable **Install unknown apps** for the app you used to open the APK.
+3. Accept any Play Protect/unknown-source prompt only if you trust this repository.
+4. Open **whisper-malay v2**.
+5. Grant **microphone** permission.
+6. Enable the **whisper-malay Accessibility Service**.
+7. Download **Malay Whisper Small** for the recommended local setup.
+8. Confirm **Malay readiness** is shown as supported.
+9. Open any app with a text field, tap the floating button, speak, then tap again.
 
 ## Local Models
 
