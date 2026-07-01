@@ -101,14 +101,14 @@ class WhisperImeService : InputMethodService() {
             addView(circle, LinearLayout.LayoutParams(dp(84), dp(84)))
         }
 
-        // Key row: backspace · space (wide) · return · switch-keyboard
+        // Key row: switch-keyboard (left) · space (wide) · return · delete (right)
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(0, dp(12), 0, 0)
-            addView(key("⌫", 1f) { backspace() })
+            addView(iconKey(R.drawable.ic_keyboard, 1f) { switchKeyboard() })
             addView(key("space", 3f) { commit(" ") })
             addView(key("return", 1f) { commit("\n") })
-            addView(key("🌐", 1f) { switchKeyboard() })
+            addView(key("⌫", 1f) { backspace() })
         }
 
         root.addView(status)
@@ -129,6 +129,21 @@ class WhisperImeService : InputMethodService() {
                 val m = dp(3); setMargins(m, 0, m, 0)
             }
             layoutParams = lp
+            isClickable = true
+            setOnClickListener { onClick() }
+        }
+
+    /** Build one keyboard key that shows an icon instead of text. */
+    private fun iconKey(res: Int, weight: Float, onClick: () -> Unit): ImageView =
+        ImageView(this).apply {
+            setImageResource(res)
+            setColorFilter(keyText)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            background = keyBackground()
+            val p = dp(13); setPadding(p, p, p, p)
+            layoutParams = LinearLayout.LayoutParams(0, dp(50), weight).apply {
+                val m = dp(3); setMargins(m, 0, m, 0)
+            }
             isClickable = true
             setOnClickListener { onClick() }
         }
