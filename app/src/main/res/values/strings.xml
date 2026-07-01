@@ -2,4 +2,15 @@
 <resources>
     <string name="app_name">whisper-malay v2</string>
     <string name="accessibility_description">Dictation: records audio, transcribes, and inserts text into focused fields.</string>
+    <string name="ime_label">Whisper Malay (voice)</string>
+    <string name="ime_mic_idle">Tap the mic and speak</string>
+    <string name="ime_mic_recording">Listening… tap again to stop</string>
+    <string name="ime_mic_busy">Transcribing…</string>
+    <string name="ime_grant_mic">Grant microphone permission</string>
+    <string name="tile_label">Whisper voice</string>
+    <string name="setup_keyboard_title">Whisper keyboard (recommended)</string>
+    <string name="setup_keyboard_sub">Bank-safe dictation. Enable it, then pick it with the 🌐 key.</string>
+    <string name="advanced_header">Advanced</string>
+    <string name="power_mode_title">Floating button (power mode)</string>
+    <string name="power_mode_warning">Uses an accessibility service. Banking apps may refuse to open while it is enabled. Use the Whisper keyboard for bank-safe dictation.</string>
 </resources>

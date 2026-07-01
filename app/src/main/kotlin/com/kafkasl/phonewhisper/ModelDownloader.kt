@@ -281,6 +281,9 @@ object ModelDownloader {
             if (missing.isNotEmpty()) {
                 throw IOException("Incomplete Whisper ONNX archive; missing: ${missing.joinToString(", ")}")
             }
+            // Repair spurious ai.onnx.ml opset stamps (ORT 1.17.x rejects opset > 4) so
+            // the model loads instead of failing at the first session. See OnnxWhisperTranscriber.
+            OnnxWhisperTranscriber.normalizeMlOpset(File(srcDir, "Whisper_initializer.onnx"))
         }
         if (!isUsableModelDir(srcDir)) {
             throw IOException("Incomplete or unsupported ASR model archive")

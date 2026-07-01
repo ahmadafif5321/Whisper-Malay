@@ -184,6 +184,70 @@ class OnnxWhisperTranscriber private constructor(
         fun missingRequiredFiles(dir: File): List<String> =
             REQUIRED_FILES.filter { !File(dir, it).exists() }
 
+        /** Max ai.onnx.ml opset ONNX Runtime 1.17.x officially supports; higher stamps are rejected. */
+        private const val MAX_ML_OPSET = 4
+        private val ML_DOMAIN = "ai.onnx.ml".toByteArray(Charsets.US_ASCII)
+
+        /**
+         * Repair a spurious ai.onnx.ml opset stamp in an ONNX model file.
+         *
+         * DocWolle/whisperOnnx's small export stamps `Whisper_initializer.onnx` with
+         * ai.onnx.ml opset 5 even though the graph uses zero ai.onnx.ml operators. ORT
+         * 1.17.x refuses to load any model whose ai.onnx.ml opset exceeds [MAX_ML_OPSET],
+         * so the very first session fails and the whole model is unusable. Lowering the
+         * stamp to 4 is a no-op for inference (no ml ops are present) and lets it load.
+         *
+         * In the protobuf, `ModelProto.opset_import` is a repeated `OperatorSetIdProto`
+         * with field 1 = domain (length-delimited) and field 2 = version (varint, tag
+         * 0x10). We find the "ai.onnx.ml" domain bytes and, when immediately followed by
+         * 0x10 and a single-byte varint > 4, rewrite that byte to 4. Idempotent: a model
+         * already at opset ≤ 4 is left untouched. Returns true if a byte was changed.
+         */
+        fun normalizeMlOpset(file: File): Boolean {
+            if (!file.isFile) return false
+            val bytes = try { file.readBytes() } catch (t: Throwable) {
+                Log.e(TAG, "normalizeMlOpset read failed for $file: ${t.message}")
+                return false
+            }
+            var patched = false
+            var i = 0
+            while (true) {
+                val j = indexOf(bytes, ML_DOMAIN, i)
+                if (j < 0) break
+                val tagPos = j + ML_DOMAIN.size
+                i = tagPos
+                // Expect field-2 varint tag (0x10) then a single-byte version varint (< 0x80)
+                if (tagPos + 1 < bytes.size && bytes[tagPos] == 0x10.toByte()) {
+                    val vPos = tagPos + 1
+                    val v = bytes[vPos].toInt() and 0xFF
+                    if (v in (MAX_ML_OPSET + 1)..0x7F) {
+                        bytes[vPos] = MAX_ML_OPSET.toByte()
+                        patched = true
+                    }
+                }
+            }
+            if (patched) {
+                try {
+                    file.writeBytes(bytes)
+                    Log.i(TAG, "normalizeMlOpset: lowered ai.onnx.ml opset to $MAX_ML_OPSET in ${file.name}")
+                } catch (t: Throwable) {
+                    Log.e(TAG, "normalizeMlOpset write failed for $file: ${t.message}")
+                    return false
+                }
+            }
+            return patched
+        }
+
+        /** First index of [needle] in [haystack] at or after [from], or -1. */
+        private fun indexOf(haystack: ByteArray, needle: ByteArray, from: Int): Int {
+            if (needle.isEmpty()) return from
+            outer@ for (s in from..haystack.size - needle.size) {
+                for (k in needle.indices) if (haystack[s + k] != needle[k]) continue@outer
+                return s
+            }
+            return -1
+        }
+
         /** Create a transcriber for an RTranslator-style model dir. Returns null on failure. */
         fun create(modelDir: File, language: String): OnnxWhisperTranscriber? {
             val missing = missingRequiredFiles(modelDir)
@@ -191,6 +255,10 @@ class OnnxWhisperTranscriber private constructor(
                 Log.e(TAG, "Model dir $modelDir missing: $missing")
                 return null
             }
+            // Some exports (e.g. DocWolle/whisperOnnx small) stamp the initializer with a
+            // spurious ai.onnx.ml opset that ONNX Runtime 1.17.x rejects at load time —
+            // repair it in place before opening the session (idempotent, cheap).
+            normalizeMlOpset(File(modelDir, "Whisper_initializer.onnx"))
             return try {
                 val env = OrtEnvironment.getEnvironment()
                 // The mel initializer and BPE detokenizer use onnxruntime-extensions custom

@@ -23,6 +23,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".MicPermissionActivity"
+            android:exported="false"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <service
             android:name=".WhisperAccessibilityService"
             android:exported="false"
@@ -33,6 +40,30 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <service
+            android:name=".WhisperImeService"
+            android:exported="true"
+            android:label="@string/ime_label"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/ime_config" />
+        </service>
+
+        <service
+            android:name=".WhisperTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_mic"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
         </service>
 
     </application>

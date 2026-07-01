@@ -26,7 +26,14 @@ android {
     @Suppress("DEPRECATION")
     kotlinOptions { jvmTarget = "17" }
 
-    testOptions { unitTests { isIncludeAndroidResources = true } }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            // Let android.util.Log (and other stubbed android APIs) return defaults instead
+            // of throwing "not mocked" in plain JVM unit tests.
+            isReturnDefaultValues = true
+        }
+    }
 
     packaging {
         // jniLibs ships libonnxruntime.so 1.17.1 for sherpa-onnx; the onnxruntime-android
