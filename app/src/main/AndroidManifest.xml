@@ -23,6 +23,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".MicPermissionActivity"
+            android:exported="false"
+            android:noHistory="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <service
             android:name=".WhisperAccessibilityService"
             android:exported="false"
