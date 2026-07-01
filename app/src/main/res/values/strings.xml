@@ -7,6 +7,7 @@
     <string name="ime_mic_recording">Listening… tap again to stop</string>
     <string name="ime_mic_busy">Transcribing…</string>
     <string name="ime_grant_mic">Grant microphone permission</string>
+    <string name="tile_label">Whisper voice</string>
     <string name="setup_keyboard_title">Whisper keyboard (recommended)</string>
     <string name="setup_keyboard_sub">Bank-safe dictation. Enable it, then pick it with the 🌐 key.</string>
     <string name="advanced_header">Advanced</string>
