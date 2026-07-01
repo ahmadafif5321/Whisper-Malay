@@ -143,7 +143,6 @@ class DictationEngine(private val context: Context) {
     /** Optional Gemini cleanup, then deliver final text. */
     private fun deliver(text: String?, listener: Listener) {
         if (text.isNullOrBlank()) { setState(listener, State.IDLE); listener.onError("No speech detected"); return }
-        AppDiagnostics.addTranscript(context, text)
         val usePost = prefs().getBoolean("use_post_processing", false)
         val apiKey = prefs().getString("api_key", "") ?: ""
         if (usePost && apiKey.isNotBlank()) {
@@ -151,9 +150,13 @@ class DictationEngine(private val context: Context) {
             val raw = prefs().getString("post_processing_prompt", PostProcessor.DEFAULT_PROMPT) ?: PostProcessor.DEFAULT_PROMPT
             PostProcessor.process(text, PostProcessor.promptForLanguage(raw, language), apiKey) { r ->
                 val out = if (!r.text.isNullOrBlank()) r.text else text
+                if (r.text.isNullOrBlank()) listener.onInfo("Cleanup failed — used raw text")
+                AppDiagnostics.addTranscript(context, out)
                 setState(listener, State.IDLE); listener.onResult(out)
             }
         } else {
+            if (usePost && apiKey.isBlank()) listener.onInfo("Post-processing needs API key. Using raw text.")
+            AppDiagnostics.addTranscript(context, text)
             setState(listener, State.IDLE); listener.onResult(text)
         }
     }

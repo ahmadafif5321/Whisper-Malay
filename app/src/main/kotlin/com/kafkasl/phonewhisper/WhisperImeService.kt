@@ -97,5 +97,10 @@ class WhisperImeService : InputMethodService() {
     }
     private fun setStatus(text: String) { status?.text = text }
 
+    override fun onFinishInputView(finishingInput: Boolean) {
+        if (engine.state != DictationEngine.State.IDLE) engine.cancel()
+        super.onFinishInputView(finishingInput)
+    }
+
     override fun onDestroy() { engine.release(); super.onDestroy() }
 }
