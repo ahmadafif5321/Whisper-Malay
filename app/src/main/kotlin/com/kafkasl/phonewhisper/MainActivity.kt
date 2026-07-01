@@ -600,6 +600,10 @@ class MainActivity : AppCompatActivity() {
     private fun refresh() {
         val audio = hasPerm(Manifest.permission.RECORD_AUDIO)
         val acc = WhisperAccessibilityService.instance != null
+        val keyboardEnabled = runCatching {
+            (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                .enabledInputMethodList.any { it.packageName == packageName }
+        }.getOrDefault(false)
         val useLocal = prefs().getBoolean("use_local", true)
         val usePostProcessing = prefs().getBoolean("use_post_processing", false)
         val hasKey = !prefs().getString("api_key", "").isNullOrBlank()
@@ -639,9 +643,10 @@ class MainActivity : AppCompatActivity() {
         val localReady = useLocal && hasModel && localModelReady
         val cloudReady = !useLocal && hasKey
         val postReady = !usePostProcessing || hasKey
-        val ready = audio && acc && (localReady || cloudReady) && postReady
+        val ready = audio && (keyboardEnabled || acc) && (localReady || cloudReady) && postReady
 
         statusSubtitle.text = when {
+            ready && keyboardEnabled -> "Ready — dictate with the Whisper keyboard"
             ready -> "Ready — tap the overlay dot to dictate"
             useLocal && hasModel && !localModelReady -> "Selected model does not support ${language.uppercase()}"
             else -> "Setup required"
