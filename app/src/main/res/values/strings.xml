@@ -7,4 +7,9 @@
     <string name="ime_mic_recording">Recording… tap to stop</string>
     <string name="ime_mic_busy">Transcribing…</string>
     <string name="ime_grant_mic">Grant microphone permission</string>
+    <string name="setup_keyboard_title">Whisper keyboard (recommended)</string>
+    <string name="setup_keyboard_sub">Bank-safe dictation. Enable it, then pick it with the 🌐 key.</string>
+    <string name="advanced_header">Advanced</string>
+    <string name="power_mode_title">Floating button (power mode)</string>
+    <string name="power_mode_warning">Uses an accessibility service. Banking apps may refuse to open while it is enabled. Use the Whisper keyboard for bank-safe dictation.</string>
 </resources>

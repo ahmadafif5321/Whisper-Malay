@@ -93,7 +93,15 @@ class MainActivity : AppCompatActivity() {
 
         // --- Setup Section ---
         root.addView(sectionHeader("Setup"))
-        
+
+        root.addView(sectionHeader(getString(R.string.setup_keyboard_title)))
+        root.addView(settingsRow(getString(R.string.setup_keyboard_sub), "Enable & select") {
+            startActivity(Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS))
+        })
+        root.addView(settingsRow("Switch keyboards now", "Show picker") {
+            (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).showInputMethodPicker()
+        })
+
         val audioRow = settingsRow("Audio permission", "Checking...") {
             if (!hasPerm(Manifest.permission.RECORD_AUDIO)) {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 1)
@@ -102,7 +110,8 @@ class MainActivity : AppCompatActivity() {
         audioRowSub = audioRow.findViewWithTag("subtitle")
         root.addView(audioRow)
 
-        val accRow = settingsRow("Accessibility service", "Checking...") {
+        root.addView(sectionHeader(getString(R.string.advanced_header)))
+        val accRow = settingsRow(getString(R.string.power_mode_title), getString(R.string.power_mode_warning)) {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
         accRowSub = accRow.findViewWithTag("subtitle")
@@ -597,7 +606,7 @@ class MainActivity : AppCompatActivity() {
         val hasModel = LocalTranscriber.availableModels(this).isNotEmpty()
 
         audioRowSub.text = if (audio) "Granted" else "Tap to grant permission"
-        accRowSub.text = if (acc) "Enabled" else "Tap to enable in settings"
+        accRowSub.text = if (acc) "Enabled — power mode active" else getString(R.string.power_mode_warning)
 
         modelContainer.visibility = if (useLocal) View.VISIBLE else View.GONE
         promptContainer.visibility = if (usePostProcessing) View.VISIBLE else View.GONE
@@ -660,10 +669,11 @@ class MainActivity : AppCompatActivity() {
         val model = MODEL_CATALOG.first { it.archive == "sherpa-onnx-whisper-small" }
         val message = listOf(
             "1. Grant microphone permission.",
-            "2. Enable the Accessibility Service.",
+            "2. Enable the Whisper keyboard and select it with the 🌐 key — this is the recommended, bank-safe way to dictate.",
             "3. Download ${model.name} for Bahasa Melayu.",
             "4. Confirm Malay readiness is green.",
-            "5. Open any text field, tap the overlay, speak, tap again."
+            "5. Open any text field and dictate with the Whisper keyboard.",
+            "6. (Optional, power mode) Enable the Accessibility Service for the floating button. Banking apps may refuse to open while it is enabled, so prefer the keyboard when using banking apps."
         ).joinToString("\n")
         android.app.AlertDialog.Builder(this)
             .setTitle("whisper-Malay setup")
