@@ -2,4 +2,9 @@
 <resources>
     <string name="app_name">whisper-malay v2</string>
     <string name="accessibility_description">Dictation: records audio, transcribes, and inserts text into focused fields.</string>
+    <string name="ime_label">Whisper Malay (voice)</string>
+    <string name="ime_mic_idle">Tap to speak</string>
+    <string name="ime_mic_recording">Recording… tap to stop</string>
+    <string name="ime_mic_busy">Transcribing…</string>
+    <string name="ime_grant_mic">Grant microphone permission</string>
 </resources>
