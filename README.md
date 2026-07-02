@@ -1,159 +1,76 @@
 # Whisper Malay
 
-Whisper Malay is my official fork of [kafkasl/phone-whisper](https://github.com/kafkasl/phone-whisper), customized for Bahasa Melayu Malaysia and Manglish use cases.
+**Offline voice typing for Bahasa Melayu Malaysia and Manglish — now as an Android keyboard, with no Accessibility Service required.**
 
-This version is maintained by **ahmadafif5321** at:
+Whisper Malay is a maintained fork of [kafkasl/phone-whisper](https://github.com/kafkasl/phone-whisper), customized for Malaysian users who dictate in Bahasa Melayu, Manglish, and mixed Malay–English chat text — including particles like `lah`, `kan`, `je`, and `kot`. Transcription runs fully on-device with Whisper models via sherpa-onnx; an optional Gemini cloud mode is available with your own API key.
 
-```text
-https://github.com/ahmadafif5321/Whisper-Malay
-```
+## 📥 Download
 
-[Download APK: whisper-Malay.apk](whisper-Malay.apk)
+| Build | APK | Notes |
+|---|---|---|
+| **v0.4.0 — Voice Keyboard** (recommended) | [whisper-Malay-voicekb-test.apk](https://github.com/ahmadafif5321/Whisper-Malay/releases/download/v0.4.0-voicekb-test/whisper-Malay-voicekb-test.apk) | Bank-safe keyboard build — see [release notes](https://github.com/ahmadafif5321/Whisper-Malay/releases/tag/v0.4.0-voicekb-test) |
+| Legacy — floating button | [whisper-Malay.apk](whisper-Malay.apk) | Original overlay version; requires Accessibility Service |
 
-Whisper Malay v2 is an Android push-to-talk dictation app. It places a small floating button over your apps: tap once to record, tap again to transcribe, then the text is inserted into the focused field when Android exposes a standard text input.
+## 🏦 Why the keyboard version exists (the banking-app problem)
 
-## Highlights
+Earlier versions inserted dictated text through Android's **Accessibility Service** — the only way a floating overlay can type into other apps. The problem: **most Malaysian banking apps refuse to open while any accessibility service is enabled** (an anti-malware policy on their side). Users had to disable accessibility every time they wanted to check their bank, then re-enable it to dictate. In practice, many simply left it off.
 
-- Bahasa Melayu Malaysia is the default language.
-- Local transcription uses sherpa-onnx / Whisper-compatible models.
-- Gemini cloud transcription is available with your own API key.
-- Optional Gemini cleanup preserves Bahasa Melayu, Manglish, and particles like `lah`, `kan`, `je`, and `kot`.
-- Model readiness is visible in-app, including whether the selected model supports `ms`.
-- Direct archive downloads are supported, including Hugging Face `/resolve/.../*.zip` links.
+**v0.4.0 solves this properly: dictation is embedded directly into an Android keyboard (IME).** Keyboards are a first-class Android text-input mechanism, so no accessibility service is needed at all:
 
-## My Use Case
+- 🏦 Banking apps open normally — accessibility stays **OFF**
+- ⌨️ Works in any app with a text field — switch to the Whisper keyboard with the 🌐 key, tap 🎤, speak, done
+- 🔁 The floating-button mode still exists for users who prefer it, but it is no longer required
 
-This fork is focused on making voice input easier for Malaysian users who write in:
+## ✨ Highlights
 
-- Bahasa Melayu Malaysia
-- Manglish
-- Mixed Malay and English
-- Casual chat text with particles like `lah`, `kan`, `je`, and `kot`
+- **Bahasa Melayu Malaysia by default** — tuned model catalog with Malay-readiness shown in-app
+- **100% offline transcription** with sherpa-onnx / Whisper models — audio never leaves the phone in local mode
+- **Optional Gemini cloud mode** with your own API key, including a cleanup pass that preserves BM/Manglish particles (`lah`, `kan`, `je`, `kot`) instead of "correcting" them into formal text
+- **Voice keyboard (IME)** shares the same `DictationEngine` as the floating button — one engine, two input surfaces
+- Direct model downloads, including Hugging Face `/resolve/.../*.zip` archive links
 
-The goal is fast phone dictation that can be used inside normal Android apps without changing keyboards.
+## 🚀 Install (keyboard build)
 
-## APK
+1. **Uninstall any existing Whisper Malay first** — the test build is debug-signed, so Android blocks installs over a differently-signed APK.
+2. Download [whisper-Malay-voicekb-test.apk](https://github.com/ahmadafif5321/Whisper-Malay/releases/download/v0.4.0-voicekb-test/whisper-Malay-voicekb-test.apk) → open it → allow **Install unknown apps** for your browser/file manager → Install. (Play Protect may warn because this isn't from the Play Store — that's expected for a GitHub-distributed APK.)
+3. Open the app → grant **microphone** permission → **Enable & select** the *Whisper keyboard (recommended)*.
+4. Download **Malay Whisper Small** (recommended local model, ~610 MB).
+5. In any chat or notes field, switch keyboards with the 🌐 key, tap 🎤, speak Bahasa Melayu, tap again — the text types itself.
+6. Optional sanity check: open your banking app and confirm it launches normally with accessibility **OFF**. That's the whole point. 🎉
 
-Current installable APK:
+## 🧠 Local models
 
-```text
-whisper-Malay.apk
-```
-
-The same APK is also kept under:
-
-```text
-release/whisper-Malay.apk
-```
-
-## Android Access Requirements
-
-Because this APK is installed directly from GitHub and not from Google Play, Android may ask for extra confirmation before installation.
-
-You may need to allow:
-
-- **Install unknown apps**: Android Settings → Apps → your browser/file manager → Install unknown apps → Allow from this source.
-- **Google Play Protect warning**: Play Protect may warn because the APK is not from Play Store. Review the warning and choose install/allow only if you trust this repository.
-- **Microphone permission**: required to record your speech.
-- **Accessibility Service**: required so the floating dictation button can insert text into the currently focused text field across apps.
-- **Internet access**: required for model downloads, Hugging Face direct URLs, and Gemini cloud transcription/cleanup.
-- **Storage space**: local models are large. Malay Whisper Small is about 610 MB; Malay Whisper Medium is about 1.8 GB.
-- **Gemini API key**: required only for cloud transcription or cleanup. Local transcription does not need an API key.
-
-Important restrictions:
-
-- Some apps block accessibility text insertion. In that case, whisper-malay copies the transcript to clipboard as fallback.
-- Terminal/custom text surfaces may not behave like standard Android text fields.
-- Accessibility must usually be re-enabled after reinstalling or changing APK signatures.
-- Large local models can be slow or fail on devices with limited RAM.
-
-## Setup
-
-1. Download [`whisper-Malay.apk`](whisper-Malay.apk) from this repo.
-2. If Android blocks installation, enable **Install unknown apps** for the app you used to open the APK.
-3. Accept any Play Protect/unknown-source prompt only if you trust this repository.
-4. Open **whisper-malay v2**.
-5. Grant **microphone** permission.
-6. Enable the **whisper-malay Accessibility Service**.
-7. Download **Malay Whisper Small** for the recommended local setup.
-8. Confirm **Malay readiness** is shown as supported.
-9. Open any app with a text field, tap the floating button, speak, then tap again.
-
-## Local Models
-
-Models are stored under:
-
-```text
-/data/data/com.kafkasl.phonewhisper/files/models/
-```
-
-Malay-capable catalog models:
+Models are stored on-device. Malay-capable catalog:
 
 | Model | Size | Notes |
 |---|---:|---|
 | Whisper Tiny Multilingual | 111 MB | Fast Malay-capable baseline |
 | Whisper Base Multilingual | 198 MB | Balanced baseline |
-| Whisper Small Multilingual | 232 MB | Hugging Face ONNX archive; experimental runtime path |
-| Malay Whisper Small | 610 MB | Recommended local Malay model |
-| Malay Whisper Medium | 1842 MB | Best quality, slower and heavier |
+| Whisper Small Multilingual | 232 MB | ONNX archive; experimental runtime path |
+| **Malay Whisper Small** | 610 MB | **Recommended** local Malay model |
+| Malay Whisper Medium | 1.8 GB | Best quality; slower, needs more RAM |
 
-If `whisper_small_int8` fails to load on a device, use **Malay Whisper Small**. It uses the sherpa-onnx path and is the safer default for reliable Bahasa Melayu dictation.
+If `whisper_small_int8` fails to load on your device, use **Malay Whisper Small** — it uses the sherpa-onnx path and is the reliable default for Bahasa Melayu dictation.
 
-## Development
+## 🔬 Engineering notes
 
-Use this repository folder:
+This fork is not just a reskin — it includes real debugging and hardening work, documented in [FIX_REPORT.md](FIX_REPORT.md):
 
-```bash
-cd /home/ahmadafif5321/Whisper-AI
-```
-
-Git remotes are set up like this:
-
-```text
-origin   = your official fork: https://github.com/ahmadafif5321/Whisper-Malay
-upstream = original project:    https://github.com/kafkasl/phone-whisper
-```
-
-Normal update workflow:
+- **Root-caused a hard crash on all local-model paths**: the native sherpa-onnx JNI library was absent from clean checkouts, and the resulting `UnsatisfiedLinkError` (an `Error`, not `Exception`) escaped a raw thread and killed the process silently. Fixed with pinned native libs (sherpa-onnx v1.12.28), proper `Throwable` boundaries, and thread hygiene.
+- **ONNX opset fix** for the Whisper Small crash — the model refused to load because of a single wrong byte in its opset stamp. Full write-up: [My Whisper model refused to load — the fix was one byte](https://ahmadafif.com/blog/whisper-onnx-one-byte-bug/). Plus a **hot-mic fix** and a **mic-permission trampoline** so the keyboard can request the runtime permission correctly from IME context.
+- **75 unit tests, 0 failures** — covering BM default-language checks, the Malay model catalog, Hugging Face archive URL handling, a built-in Malay WAV fixture, and WER regression tests for BM and Manglish phrases.
 
 ```bash
-git status
-git add .
-git commit -m "update use case"
-git push origin main
-```
-
-To pull updates from the original project later:
-
-```bash
-git fetch upstream
-git merge upstream/main
-```
-
-Build and test commands:
-
-```bash
+# Build and test
 ./gradlew testDebugUnitTest
 ./gradlew assembleDebug
 ./gradlew lintDebug
 ```
 
-Regression coverage includes:
+## 🔒 Privacy
 
-- Bahasa Melayu default language checks.
-- Malay Whisper model catalog checks.
-- Hugging Face archive URL handling.
-- Built-in Malay WAV fixture validation.
-- WER tests for Bahasa Melayu and Manglish sample phrases.
+Local mode keeps audio entirely on-device. Cloud mode sends audio directly from the phone to Gemini using an API key stored locally — there is no relay backend in this project. See [PRIVACY.md](PRIVACY.md).
 
-## Privacy
+## 🙏 Credits
 
-Local mode keeps audio on-device. Cloud mode sends audio directly from the phone to Gemini using the API key stored locally on the device. There is no relay backend in this project.
-
-See [PRIVACY.md](PRIVACY.md).
-
-## License
-
-This fork is maintained as a personal project by **ahmadafif5321**.
-
-Original project: [kafkasl/phone-whisper](https://github.com/kafkasl/phone-whisper).
+Fork of [kafkasl/phone-whisper](https://github.com/kafkasl/phone-whisper), maintained by [ahmadafif5321](https://ahmadafif.com) as a personal project for the Malaysian voice-typing use case.
